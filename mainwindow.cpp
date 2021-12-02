@@ -463,3 +463,4 @@ void MainWindow::on_but_stop_clicked()
     send(byteArr2Send);
 }
 
+
