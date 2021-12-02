@@ -5,10 +5,10 @@
 #include <QString>
 #include <QTextStream>
 #include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPortInfo>
 #include <QDebug>
 #include <QChar>
 #include <QString>
-#include "serialcomm.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     //TODO: arrow dark (currently cannot be seen)
     ui->comboPort->setStyleSheet("QComboBox {background-color: #333333; border: 3; border-color: #333333; color: white; border-radius: 2px} QComboBox:hover {background-color: #3A3A3A; border: 3; border-color: #333333; color: white; border-radius: 2px} QComboBox:down-arrow {color: white; background-color : #6d6d6d; border-color: #6d6d6d;} QComboBox:drop-down {color: #333333; background-color: #6d6d6d; border-left-color: #333333;}");
 
-    QStringList ports = SerialComm::getSerialPorts();
+    QStringList ports = getSerialPorts();
     ui->comboPort->addItems(ports);
 }
 
@@ -232,12 +232,12 @@ QString MainWindow::editList4protocol(QStringList List)
                 {
                     if(List[i].toInt() < 0)
                     {
-                        string2send.append("L");    //TODO: ??? is left backwards?
+                        string2send.append("L");
                         List[i].remove(0, 1);
                     }
                     else
                     {
-                        string2send.append("R");    //TODO: ??? is right forwards?
+                        string2send.append("R");
                     }
                     QString tmp = QStringLiteral("%1").arg(List[i].toInt(), 3, 10, QLatin1Char('0'));
                     string2send.append(tmp);
@@ -263,10 +263,60 @@ QString MainWindow::editList4protocol(QStringList List)
     return string2send;
 }
 
-void MainWindow::send(QString str2send)
+QStringList MainWindow::getSerialPorts()
 {
-    QSerialPort serialPort;
+    QStringList ports;
+    QList<QSerialPortInfo> serialPortInfos=QSerialPortInfo::availablePorts();
 
+    for(QSerialPortInfo &portInfo:serialPortInfos)
+    {
+       ports.append(portInfo.portName());
+    }
+    return ports;
+}
+
+void MainWindow::send(QByteArray byteArr2Send)
+{
+    QSerialPort serial;
+
+    serial.setPortName(ui->comboPort->currentText());
+    serial.setBaudRate(QSerialPort::Baud9600);
+    serial.setDataBits(QSerialPort::Data8);
+    serial.setParity(QSerialPort::NoParity);
+    serial.setStopBits(QSerialPort::OneStop);
+    serial.setFlowControl(QSerialPort::NoFlowControl);
+
+    if (serial.open(QIODevice::ReadWrite))
+    {
+        qDebug() << ("Connected");
+    } else
+    {
+        qDebug() << ("Error: Could not connect");
+    }
+
+    if(serial.isWritable())
+    {
+        int int_sizeofByteArr = byteArr2Send.size();
+        QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 8, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
+        QByteArray sizeOfByteArr;
+        sizeOfByteArr += tmp;
+
+        serial.write(sizeOfByteArr);
+        serial.write(byteArr2Send);
+        qDebug() << "Data sent";
+        qDebug() << byteArr2Send;
+    }
+    else
+    {
+        qDebug() << "Not writeable";
+    }
+
+    serial.waitForBytesWritten();
+    serial.flush();
+    if (serial.isOpen())
+        serial.close();
+
+    qDebug() << ("Disconnected");
 }
 
 void MainWindow::on_but_selectFile_clicked()
@@ -382,8 +432,9 @@ void MainWindow::on_but_selectFile_clicked()
        if(fileOk == true)
        {
            string2send = editList4protocol(editedList);
-           //send list2send
-           send(string2send);
+           QByteArray byteArr2Send;
+           byteArr2Send += string2send;
+           send(byteArr2Send);
        }
        else
        {
@@ -396,13 +447,19 @@ void MainWindow::on_but_selectFile_clicked()
 
 void MainWindow::on_but_start_clicked()
 {
-    //send "START\n"
-    send("START\n");
+    QString str2send = "START\n";
+    QByteArray byteArr2Send;
+    byteArr2Send += str2send;
+
+    send(byteArr2Send);
 }
 
 void MainWindow::on_but_stop_clicked()
 {
-    //send "STOP\n"
-    send("STOP\n");
+    QString str2send = "STOP\n";
+    QByteArray byteArr2Send;
+    byteArr2Send += str2send;
+
+    send(byteArr2Send);
 }
 

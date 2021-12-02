@@ -23,7 +23,11 @@ public:
     bool checkPositionEntries(QStringList rawList, bool fileOk);
 
     QString editList4protocol(QStringList List);
-    void send(QString str2send);
+
+    static QStringList getSerialPorts(void);
+    void send(QByteArray byteArr2Send);
+
+
 
 
 private slots:
