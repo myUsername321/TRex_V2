@@ -286,33 +286,48 @@ void MainWindow::send(QByteArray byteArr2Send)
     serial.setStopBits(QSerialPort::OneStop);
     serial.setFlowControl(QSerialPort::NoFlowControl);
 
-    if (serial.open(QIODevice::ReadWrite))
+
+
+    if (serial.open(QIODevice::WriteOnly))
     {
         qDebug() << ("Connected");
     } else
     {
         qDebug() << ("Error: Could not connect");
     }
-
+    serial.flush();
+    //serial.putChar(0x00);
+    serial.waitForBytesWritten();
+    //_sleep(1000);
     if(serial.isWritable())
     {
-        int int_sizeofByteArr = byteArr2Send.size();
-        QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 8, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
-        QByteArray sizeOfByteArr;
-        sizeOfByteArr += tmp;
+//        int int_sizeofByteArr = byteArr2Send.size();
+//        QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 8, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
+//        QByteArray sizeOfByteArr;
+//        sizeOfByteArr += tmp;
 
-        serial.write(sizeOfByteArr);
-        serial.write(byteArr2Send);
-        qDebug() << "Data sent";
-        qDebug() << byteArr2Send;
+//        serial.write(sizeOfByteArr);
+//        serial.write(byteArr2Send);
+//        qDebug() << "Data sent";
+//        qDebug() << byteArr2Send;
+//        serial.write(byteArr2Send);
+
+        //Test
+        QByteArray test;
+        test.append(0x61);
+        serial.write(test);
     }
     else
     {
         qDebug() << "Not writeable";
     }
 
+    if (serial.error() == QSerialPort::WriteError)
+        qDebug() << QObject::tr("Failed to write from port %1, error: %2").arg(ui->comboPort->currentText()).arg(serial.errorString()) << endl;
+
     serial.waitForBytesWritten();
     serial.flush();
+    //_sleep(5000);
     if (serial.isOpen())
         serial.close();
 
