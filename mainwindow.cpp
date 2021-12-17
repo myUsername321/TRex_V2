@@ -296,26 +296,26 @@ void MainWindow::send(QByteArray byteArr2Send)
         qDebug() << ("Error: Could not connect");
     }
     serial.flush();
-    //serial.putChar(0x00);
+    serial.putChar(0x00);
     serial.waitForBytesWritten();
-    //_sleep(1000);
+    _sleep(3000);
     if(serial.isWritable())
     {
-//        int int_sizeofByteArr = byteArr2Send.size();
-//        QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 8, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
-//        QByteArray sizeOfByteArr;
-//        sizeOfByteArr += tmp;
+        int int_sizeofByteArr = byteArr2Send.size();
+        QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 4, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
+        QByteArray sizeOfByteArr;
+        sizeOfByteArr += tmp;
 
-//        serial.write(sizeOfByteArr);
-//        serial.write(byteArr2Send);
-//        qDebug() << "Data sent";
-//        qDebug() << byteArr2Send;
-//        serial.write(byteArr2Send);
+        serial.write(sizeOfByteArr);
+        serial.write(byteArr2Send);
+        qDebug() << "Data sent";
+        qDebug() << sizeOfByteArr;
+        qDebug() << byteArr2Send;
 
-        //Test
-        QByteArray test;
-        test.append(0x61);
-        serial.write(test);
+//        //Test
+//        QByteArray test;
+//        test.append(0x31);
+//        serial.write(test);
     }
     else
     {
