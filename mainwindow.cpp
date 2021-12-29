@@ -286,8 +286,6 @@ void MainWindow::send(QByteArray byteArr2Send)
     serial.setStopBits(QSerialPort::OneStop);
     serial.setFlowControl(QSerialPort::NoFlowControl);
 
-
-
     if (serial.open(QIODevice::WriteOnly))
     {
         qDebug() << ("Connected");
@@ -295,21 +293,23 @@ void MainWindow::send(QByteArray byteArr2Send)
     {
         qDebug() << ("Error: Could not connect");
     }
+
     serial.flush();
     serial.putChar(0x00);
     serial.waitForBytesWritten();
     _sleep(3000);
+
     if(serial.isWritable())
     {
-        int int_sizeofByteArr = byteArr2Send.size();
-        QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 4, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
-        QByteArray sizeOfByteArr;
-        sizeOfByteArr += tmp;
+        //int int_sizeofByteArr = byteArr2Send.size();
+        //QString tmp = QStringLiteral("%1").arg(int_sizeofByteArr, 4, 10, QLatin1Char('0')); //fill with zeros -> 8 digits
+        //QByteArray sizeOfByteArr;
+        //sizeOfByteArr += tmp;
 
-        serial.write(sizeOfByteArr);
+        //serial.write(sizeOfByteArr);
         serial.write(byteArr2Send);
         qDebug() << "Data sent";
-        qDebug() << sizeOfByteArr;
+        //qDebug() << sizeOfByteArr;
         qDebug() << byteArr2Send;
 
 //        //Test
@@ -398,8 +398,18 @@ void MainWindow::on_but_selectFile_clicked()
        //check position entries
        fileOk = checkPositionEntries(rawList, fileOk);
 
-       //number of cycles
-       editedList.append(rawList[1]);
+       //create QByteArray to send
+       QByteArray byteArr2Send;
+       byteArr2Send[0] = 2;
+
+       //append number of cycles to QByteArray to send
+
+       //editedList.append(rawList[1]);
+       int tmp = rawList[1].toInt();
+       byteArr2Send[1] = tmp;
+
+       //append number of phases per cycle -> for receiving data
+       byteArr2Send[2] = rawList[rawList.length() - 4].toInt();
 
        // Remove unnecessary data
        for(int i=8; i<rawList.length(); i++)
@@ -409,7 +419,7 @@ void MainWindow::on_but_selectFile_clicked()
            {
                case 0:
                {
-                   editedList.append(rawList[i]);
+                   //editedList.append(rawList[i]);
                    break;
                }
                case 1:
@@ -428,14 +438,24 @@ void MainWindow::on_but_selectFile_clicked()
                    {
                        tmpDeciSeconds = intHours * 36000 + intMinutes * 600 + intSeconds * 10;
                    }
-                   QString milliSeconds = QString::number(tmpDeciSeconds * 100);
-                   editedList.append(milliSeconds);
+                   //QString milliSeconds = QString::number(tmpDeciSeconds * 100);
+                   //editedList.append(milliSeconds);
+
+                   //convert int tmpDeciSeconds to 3 bytes
+                   qDebug() << ((tmpDeciSeconds >> 16) & 0xFF);
+                   qDebug() << ((tmpDeciSeconds >> 8) & 0xFF);
+                   qDebug() << ((tmpDeciSeconds) & 0xFF);
+                   byteArr2Send.append((tmpDeciSeconds >> 16) & 0xFF);
+                   byteArr2Send.append((tmpDeciSeconds >> 8) & 0xFF);
+                   byteArr2Send.append(tmpDeciSeconds & 0xFF);
+                   //byteArr2Send.append(tmpDeciSeconds);
                    break;
                 }
                case 2:
                {
-                   int tmp3 = (rawList[i+1].toInt()) - (rawList[i].toInt());
-                   editedList.append(QString::number(tmp3));
+                   //int tmp3 = (rawList[i+1].toInt()) - (rawList[i].toInt());
+                   //editedList.append(QString::number(tmp3));
+                   byteArr2Send.append(rawList[i+1].toInt());
                    break;
                }
                case 3:
@@ -446,14 +466,11 @@ void MainWindow::on_but_selectFile_clicked()
        }
        if(fileOk == true)
        {
-           string2send = editList4protocol(editedList);
-           QByteArray byteArr2Send;
-           byteArr2Send += string2send;
            send(byteArr2Send);
        }
        else
        {
-           string2send = "not valid";
+           //string2send = "not valid";
            ui->txt_file->insert(" Please select another csv-file!");
        }
        file.close();
@@ -462,19 +479,15 @@ void MainWindow::on_but_selectFile_clicked()
 
 void MainWindow::on_but_start_clicked()
 {
-    QString str2send = "START\n";
     QByteArray byteArr2Send;
-    byteArr2Send += str2send;
-
+    byteArr2Send [0] = 1;
     send(byteArr2Send);
 }
 
 void MainWindow::on_but_stop_clicked()
 {
-    QString str2send = "STOP\n";
     QByteArray byteArr2Send;
-    byteArr2Send += str2send;
-
+    byteArr2Send[0] = 0;
     send(byteArr2Send);
 }
 
